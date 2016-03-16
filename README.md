@@ -30,7 +30,7 @@ The idea behind PXaaS vnf is to enables a user, who acts as the network administ
 
 2) Clone the ``proxy-build`` repository, and cd into the folder	
 
-		git clone git@github.com:dimosthe/proxy-build.git 
+		git clone git@github.com:T-NOVA/proxy-build.git 
 		cd proxy-build    
 
 3) Create the folder ``shared``
@@ -79,7 +79,7 @@ and follow the instructions above
 3) Clone the ``Squid-dashboard``
 	
 	cd /home/proxyvnf/dashboard
-	git clone git@github.com:dimosthe/Squid-dashboard.git
+	git clone git@github.com:T-NOVA/Squid-dashboard.git
 
 4) Create a new database and a new user
 
@@ -172,7 +172,7 @@ Creates a ``package.box``
 
 3) Clone the ``proxy-build`` repository, and cd into the folder	
 
-		git clone git@github.com:dimosthe/proxy-build.git 
+		git clone git@github.com:T-NOVA/proxy-build.git 
 		cd proxy-build    
 
 4) Change the name of the box (as specified in (1)) in ``Vagrantfile`` 
@@ -198,7 +198,7 @@ Once this command finishes, the VM is up and running. Our user is ``vagrant`` an
 	sudo -u proxyvnf -s 
 	# [Generate SSH keys](https://help.github.com/articles/generating-ssh-keys/) and add the public key to your git profile
 	cd /home/proxyvnf/dashboard
-	git clone git@github.com:dimosthe/Squid-dashboard.git
+	git clone git@github.com:T-NOVA/Squid-dashboard.git
 	cd Squid-dashboard
 	composer install
 
