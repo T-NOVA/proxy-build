@@ -206,8 +206,4 @@ Vagrant.configure(2) do |config|
     ln -s /home/proxyvnf/dashboard /var/www/html/
   SHELL
 
-  # TODO
-  # Configure /etc/cloud
-  # Start the cloud service?
-
 end
