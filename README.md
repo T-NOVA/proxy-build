@@ -43,14 +43,5 @@ Once provisioning is done, the VM should be up and running with [Squid](http://w
     sudo passwd vagrant
 ```
 
-
-## Package the VM
-
-```sh
-    vagrant halt
-    vagrant package
-```
-
-Creates `package.box`
-
+5. Test the application: http://192.168.64.120
 
