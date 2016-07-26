@@ -198,12 +198,24 @@ Vagrant.configure(2) do |config|
   config.vm.provision "file", source: "./conf/dashboard-dir.conf", destination: "dashboard-dir.conf"
   config.vm.provision "shell", inline: <<-'SHELL'
     mv /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-available/000-default.conf.dist
-    cp /home/proxyvnf/dashboard-dir.conf /etc/apache2/conf-available/
+    cp /home/vagrant/dashboard-dir.conf /etc/apache2/conf-available/
     chown root:root /etc/apache2/conf-available/dashboard-dir.conf
     ln -sf /etc/apache2/conf-available/dashboard-dir.conf /etc/apache2/conf-enabled/dashboard-dir.conf
     ln -sf /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-enabled/000-default.conf
     sed -e 's/DocumentRoot[[:space:]]\+\/var\/www\/html$/DocumentRoot \/var\/www\/html\/dashboard\/web/g' /etc/apache2/sites-available/000-default.conf.dist > /etc/apache2/sites-available/000-default.conf
     ln -s /home/proxyvnf/dashboard /var/www/html/
+    systemctl restart apache2.service
   SHELL
+
+  # Reload the dashboard
+  # ALWAYS RUN
+  config.vm.provision "shell", run: "always", inline: <<-SHELL
+    cd /home/proxyvnf/dashboard
+    sudo -u proxyvnf git pull
+  SHELL
+
+  # TODO
+  # Configure /etc/cloud
+  # Start the cloud service?
 
 end
