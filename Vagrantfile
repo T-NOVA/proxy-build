@@ -18,7 +18,7 @@ Vagrant.configure(2) do |config|
   # VirtualBox
   config.vm.provider "virtualbox" do |v|
     v.memory = 1024
-    v.cpus = 2
+    v.cpus = 1
   end
 
   # KVM
@@ -59,13 +59,6 @@ Vagrant.configure(2) do |config|
   # argument is a set of non-required options.
   # config.vm.synced_folder "../data", "/vagrant_data"
 
-  # Configure Shared folders. This provisions the VM's /home/proxyvnf/dashboard folder
-  # to the host's ./shared folder (relative to current path)
-  # config.vm.synced_folder "./shared", "/home/proxyvnf/dashboard",
-  #   owner: "proxyvnf",
-  #   group: "proxyvnf",
-  #   mount_options: ["dmode=755,fmode=644"]
-
   # Disable the default sharing
   config.vm.synced_folder ".", "/vagrant", disabled: true
 
@@ -98,6 +91,9 @@ Vagrant.configure(2) do |config|
     useradd -m -U -G sudo proxyvnf
     sudo -u proxyvnf ssh-keygen -t rsa -q -N "" -f /home/proxyvnf/.ssh/id_rsa
   SHELL
+
+  # TODO
+  # Generate random passwords for MySQL root, dashboarduser, dashboard cookie, dashboard admin, vagrant user
 
   # Install LAMP components
   config.vm.provision "shell", inline: <<-SHELL
@@ -140,7 +136,7 @@ Vagrant.configure(2) do |config|
 
   # Download the black/whitelists
   # See http://dsi.ut-capitole.fr/documentations/cache/squidguard_en.html
-  # ans http://dsi.ut-capitole.fr/blacklists/index_en.php
+  # and http://dsi.ut-capitole.fr/blacklists/index_en.php
   config.vm.provision "shell", inline: <<-SHELL
     cd /home/proxyvnf
     sudo -u proxyvnf mkdir blacklists && cd blacklists
@@ -167,7 +163,7 @@ Vagrant.configure(2) do |config|
     cd /tmp
     curl -s http://getcomposer.org/installer | php
     mv composer.phar /usr/local/bin/composer
-    sudo -u proxyvnf composer global require "fxp/composer-asset-plugin:~1.1.0"
+    sudo -u proxyvnf composer global require "fxp/composer-asset-plugin:~1.1.1"
     cd /home/proxyvnf/dashboard
     sudo -u proxyvnf composer install
   SHELL
@@ -178,8 +174,8 @@ Vagrant.configure(2) do |config|
   config.vm.provision "shell", inline: <<-SHELL
     cd /home/proxyvnf/dashboard
     sudo -u proxyvnf php yii migrate/up --interactive=0 --migrationPath=@vendor/dektrium/yii2-user/migrations
-    sudo -u proxyvnf /home/proxyvnf/dashboard/yii createusers/create
-    sudo -u proxyvnf /home/proxyvnf/dashboard/yii migrate --interactive=0
+    sudo -u proxyvnf php yii createusers/create
+    sudo -u proxyvnf php yii migrate --interactive=0
   SHELL
 
   # Deploy the dashboard
