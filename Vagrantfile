@@ -127,10 +127,10 @@ Vagrant.configure(2) do |config|
 
   # Copy squid and squidguard config to the box
   config.vm.provision "file", source: "./conf/squid.conf", destination: "squid.conf"
-  config.vm.provision "file", source: "./conf/squidguard.conf", destination: "squidguard.conf"
+  config.vm.provision "file", source: "./conf/squidGuard.conf", destination: "squidGuard.conf"
   config.vm.provision "shell", inline: <<-SHELL
     cp /home/vagrant/squid.conf /etc/squid3
-    cp /home/vagrant/squidguard.conf /etc/squidguard
+    cp /home/vagrant/squidGuard.conf /etc/squidguard
     chown -R proxy:proxy /etc/squid*
   SHELL
 
