@@ -15,20 +15,19 @@ The PXaaS vNF enables the provider to deploy a proxy/filtering/web access servic
 
 ## Provision the VM
 
-1. Clone the [proxy-build](https://github.com/T-NOVA/proxy-build) repository, and cd into the folder:
+**Step 1.** Clone the [proxy-build](https://github.com/T-NOVA/proxy-build) repository, and cd into the folder:
 
 ```sh
-    git clone https://github.com/T-NOVA/proxy-build
-    cd proxy-build
+    git clone https://github.com/T-NOVA/proxy-build && cd proxy-build
 ```
 
-2. [Optional] To change the default IP, modify the [Vagrantfile](Vagrantfile):
+_Optional_ To change the default IP, modify the [Vagrantfile](Vagrantfile):
 
 ```ruby
     config.vm.network "private_network", ip: "192.168.64.120"
 ```
 
-3. Provision the VM:
+**Step 2.** Provision the VM:
 
 ```sh
     vagrant up --provider libvirt
@@ -36,12 +35,12 @@ The PXaaS vNF enables the provider to deploy a proxy/filtering/web access servic
 
 Once provisioning is done, the VM should be up and running with [Squid](http://www.squid-cache.org/), [SquidGuard](http://www.squidguard.org/), preconfigured [blacklists](http://dsi.ut-capitole.fr/blacklists/index_en.php) and [dashboard](https://github.com/T-NOVA/Squid-dashboard).
 
-4. [Optional] Change the `vagrant` user's password:
+**Step 3.** Change the `vagrant` user's password so users can log in:
 
 ```sh
     vagrant ssh
     sudo passwd vagrant
 ```
 
-5. Test the application: http://192.168.64.120
+**Step 4.** Access the application at http://192.168.64.120
 
