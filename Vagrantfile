@@ -204,6 +204,7 @@ Vagrant.configure(2) do |config|
     ln -sf /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-enabled/000-default.conf
     sed -e 's/DocumentRoot[[:space:]]\+\/var\/www\/html$/DocumentRoot \/var\/www\/html\/dashboard\/web/g' /etc/apache2/sites-available/000-default.conf.dist > /etc/apache2/sites-available/000-default.conf
     ln -s /home/proxyvnf/dashboard /var/www/html/
+    chown -R www-data:www-data /var/www/html/dashboard/web/assets
     systemctl restart apache2.service
   SHELL
 
