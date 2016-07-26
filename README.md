@@ -44,3 +44,12 @@ Once provisioning is done, the VM should be up and running with [Squid](http://w
 
 **Step 4.** Access the application at http://192.168.64.120
 
+
+## Refresh the VM
+
+The VM is configured to pull new commits into the dashboard directory on reload. Execute:
+
+```sh
+    vagrant reload
+```
+

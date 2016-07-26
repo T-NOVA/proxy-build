@@ -182,11 +182,12 @@ Vagrant.configure(2) do |config|
     sudo -u proxyvnf /home/proxyvnf/dashboard/yii migrate --interactive=0
   SHELL
 
-  # Check that all blacklists are loaded:
-  # echo "DROP DATABASE dashboarddb; CREATE DATABASE dashboarddb;" | mysql -u root -p12345678
-  # cd /home/proxyvnf/dashboard && sudo -u proxyvnf php yii migrate/up --interactive=0 --migrationPath=@vendor/dektrium/yii2-user/migrations && sudo -u proxyvnf /home/proxyvnf/dashboard/yii createusers/create && sudo -u proxyvnf /home/proxyvnf/dashboard/yii migrate --interactive=0
-  # echo "SELECT COUNT(id) FROM dashboarddb.blacklist_domains;" | mysql -u root -p12345678
-  # echo "`wc -l /etc/squidguard/blacklists/ads/domains` + `wc -l /etc/squidguard/blacklists/adult/domains`" | bc --mathlib
+  # Deploy the dashboard
+  config.vm.provision "shell", inline: <<-SHELL
+    ln -s /home/proxyvnf/dashboard /var/www/html/
+    chown -R www-data:www-data /var/www/html/dashboard/web/assets
+    chown -R www-data:www-data /var/www/html/dashboard/runtime
+  SHELL
 
   # Apache rewrite module required for the dashboard
   config.vm.provision "shell", inline: <<-SHELL
@@ -194,7 +195,7 @@ Vagrant.configure(2) do |config|
     systemctl restart apache2.service
   SHELL
 
-  # Configure the apache document root
+  # Configure the apache web root
   config.vm.provision "file", source: "./conf/dashboard-dir.conf", destination: "dashboard-dir.conf"
   config.vm.provision "shell", inline: <<-'SHELL'
     mv /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-available/000-default.conf.dist
@@ -203,8 +204,6 @@ Vagrant.configure(2) do |config|
     ln -sf /etc/apache2/conf-available/dashboard-dir.conf /etc/apache2/conf-enabled/dashboard-dir.conf
     ln -sf /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-enabled/000-default.conf
     sed -e 's/DocumentRoot[[:space:]]\+\/var\/www\/html$/DocumentRoot \/var\/www\/html\/dashboard\/web/g' /etc/apache2/sites-available/000-default.conf.dist > /etc/apache2/sites-available/000-default.conf
-    ln -s /home/proxyvnf/dashboard /var/www/html/
-    chown -R www-data:www-data /var/www/html/dashboard/web/assets
     systemctl restart apache2.service
   SHELL
 
@@ -214,9 +213,5 @@ Vagrant.configure(2) do |config|
     cd /home/proxyvnf/dashboard
     sudo -u proxyvnf git pull
   SHELL
-
-  # TODO
-  # Configure /etc/cloud
-  # Start the cloud service?
 
 end
