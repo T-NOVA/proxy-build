@@ -203,8 +203,23 @@ Vagrant.configure(2) do |config|
     systemctl restart apache2.service
   SHELL
 
-  # Reload the dashboard
+  # Enable service control from the dashboard
+  config.vm.provision "shell", inline: <<-SHELL
+    echo "www-data ALL=(ALL) NOPASSWD:ALL" | tee /etc/sudoers.d/www-data
+    chmod 440 /etc/sudoers.d/www-data
+  SHELL
+
   # ALWAYS RUN
+  # Fix permissions on conf files
+  config.vm.provision "shell", run: "always", inline: <<-SHELL
+    chgrp www-data /etc/squid3/squid.conf
+    chgrp www-data /etc/squidguard/squidGuard.conf
+    chmod g+rw /etc/squid3/squid.conf
+    chmod g+rw /etc/squidguard/squidGuard.conf
+  SHELL
+
+  # ALWAYS RUN
+  # Reload the dashboard
   config.vm.provision "shell", run: "always", inline: <<-SHELL
     cd /home/proxyvnf/dashboard
     sudo -u proxyvnf git pull
