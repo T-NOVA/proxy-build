@@ -53,3 +53,38 @@ The VM is configured to pull new commits into the dashboard directory on reload.
     vagrant reload
 ```
 
+## Local VM development
+
+To work on the local VM, first provision it and then use a sandbox environment to test, commit or rollback additional configuration.
+
+**Step 1.** Install the sahara and fog plugins
+
+```sh
+    vagrant plugin install sahara
+    vagrant plugin install fog
+```
+
+**Step 2.** Enter sandbox mode
+
+```sh
+    vagrant sandbox on
+```
+
+**Step 3.** Save the changes permanently
+
+```sh
+    vagrant sandbox commit
+```
+
+OR **Step 3.** Rollback the changes
+
+```sh
+    vagrant sandbox rollback
+```
+
+**Step 4.** Exit sandbox mode
+
+```sh
+    vagrant sandbox off
+```
+
