@@ -11,7 +11,9 @@ The PXaaS vNF enables the provider to deploy a proxy/filtering/web access servic
 
 * KVM/VirtualBox
 * [Vagrant](http://vagrantup.com)
-* [vagrant-vbguest](https://github.com/dotless-de/vagrant-vbguest) plugin if provisioned with VirtualBox and [vagrant-libvirt](https://github.com/vagrant-libvirt/vagrant-libvirt) plugin if provisioned with libvirt
+* [vagrant-vbguest](https://github.com/dotless-de/vagrant-vbguest) plugin if provisioned with VirtualBox or [vagrant-libvirt](https://github.com/vagrant-libvirt/vagrant-libvirt) plugin if provisioned with libvirt
+* [vagrant-hosts](https://github.com/oscar-stack/vagrant-hosts) plugin for managing local DNS resolution
+
 
 ## Provision the VM
 
@@ -19,12 +21,6 @@ The PXaaS vNF enables the provider to deploy a proxy/filtering/web access servic
 
 ```sh
     git clone https://github.com/T-NOVA/proxy-build && cd proxy-build
-```
-
-_Optional_ To change the default IP, modify the [Vagrantfile](Vagrantfile):
-
-```ruby
-    config.vm.network "private_network", ip: "192.168.64.120"
 ```
 
 **Step 2.** Provision the VM:
@@ -42,7 +38,7 @@ Once provisioning is done, the VM should be up and running with [Squid](http://w
     sudo passwd vagrant
 ```
 
-**Step 4.** Access the application at http://192.168.64.120
+**Step 4.** Access the application at http://pxaas
 
 
 ## Refresh the VM
@@ -52,6 +48,7 @@ The VM is configured to pull new commits into the dashboard directory on reload.
 ```sh
     vagrant reload
 ```
+
 
 ## Local VM development
 

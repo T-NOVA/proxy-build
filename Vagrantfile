@@ -17,7 +17,7 @@ Vagrant.configure(2) do |config|
 
   # VirtualBox
   config.vm.provider "virtualbox" do |v|
-    v.memory = 1024
+    v.memory = 512
     v.cpus = 1
   end
 
@@ -27,7 +27,7 @@ Vagrant.configure(2) do |config|
     # v.username = ""
     # v.password = ""
     # v.connect_via_ssh =
-    v.memory = 1024
+    v.memory = 512
     v.cpus = 1
     # v.nested = "false"
     # v.graphics_type = "spice"
@@ -46,7 +46,7 @@ Vagrant.configure(2) do |config|
 
   # Create a private network, which allows host-only access to the machine
   # using a specific IP.
-  config.vm.network "private_network", ip: "192.168.64.120"
+  config.vm.network "private_network", type: "dhcp"
 
   # Create a public network, which generally matched to bridged network.
   # Bridged networks make the machine appear as another physical device on
@@ -86,14 +86,35 @@ Vagrant.configure(2) do |config|
   # ansible does not need a client, but needs python-apt to install packages
   config.vm.provision "shell", inline: "apt-get install -y python-apt"
 
+  # Generate locales
+  config.vm.provision "shell", inline: <<-SHELL
+    cat <<EOF > /etc/locale.gen
+    el_GR.UTF-8 UTF-8
+    en_GB.UTF-8 UTF-8
+    en_US.UTF-8 UTF-8
+    EOF
+  SHELL
+  config.vm.provision "shell", inline: "locale-gen"
+
   # Create and configure the user who runs the dashboard
   config.vm.provision "shell", inline: <<-SHELL
     useradd -m -U -G sudo proxyvnf
     sudo -u proxyvnf ssh-keygen -t rsa -q -N "" -f /home/proxyvnf/.ssh/id_rsa
   SHELL
 
+  # Add entries to the hosts file
+  # Run `vagrant hosts list` to list private_network hosts info
+  config.vm.provision :hosts do |provisioner|
+    provisioner.add_host '10.30.0.11', ['dns.medianetlab.gr', 'dns']
+    provisioner.add_host '127.0.0.1', ['pxaas']
+  end
+
   # TODO
   # Generate random passwords for MySQL root, dashboarduser, dashboard cookie, dashboard admin, vagrant user
+
+  # TODO
+  # Setup cloud-init and collectd
+  config.vm.provision "shell", inline: "apt-get install -y collectd cloud-init"
 
   # Install LAMP components
   config.vm.provision "shell", inline: <<-SHELL
