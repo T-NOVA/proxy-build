@@ -89,10 +89,10 @@ Vagrant.configure(2) do |config|
   # Generate locales
   config.vm.provision "shell", inline: <<-SHELL
     cat <<EOF > /etc/locale.gen
-    el_GR.UTF-8 UTF-8
-    en_GB.UTF-8 UTF-8
-    en_US.UTF-8 UTF-8
-    EOF
+el_GR.UTF-8 UTF-8
+en_GB.UTF-8 UTF-8
+en_US.UTF-8 UTF-8
+EOF
   SHELL
   config.vm.provision "shell", inline: "locale-gen"
 
