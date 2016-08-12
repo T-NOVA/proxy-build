@@ -6,6 +6,8 @@ A Debian Jessie box is built, which contains [Squid](http://www.squid-cache.org/
 
 The PXaaS vNF enables the provider to deploy a proxy/filtering/web access service on demand onto a cloud infrastructure.
 
+Squid typically uses only a single processor, even on a multi-processor machine. To get increased web-caching performance, it is better to scale the web cache out across multiple vNFs.
+
 
 ## Host machine requirements
 
@@ -38,10 +40,20 @@ Once provisioning is done, the VM should be up and running with [Squid](http://w
     sudo passwd vagrant
 ```
 
-**Step 4.** Access the application at http://pxaas
+**Step 4.** On your dev machine, access the dashboard at http://pxaas. To test the Squid proxy do:
+
+```sh
+    curl -x pxaas:8000 http://google.com
+```
+
+To test that site blocking is enabled do:
+
+```sh
+    curl -x pxaas:8000 http://facebook.com
+```
 
 
-## Refresh the VM
+## Reload the VM configuration
 
 The VM is configured to pull new commits into the dashboard directory on reload. Execute:
 
