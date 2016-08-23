@@ -109,11 +109,7 @@ EOF
     provisioner.add_host '127.0.0.1', ['pxaas']
   end
 
-  # TODO
-  # Generate random passwords for MySQL root, dashboarduser, dashboard cookie, dashboard admin, vagrant user
-
-  # TODO
-  # Setup cloud-init and collectd
+  # Install cloud-init and collectd
   config.vm.provision "shell", inline: "apt-get install -y collectd cloud-init"
 
   # Install LAMP components
