@@ -109,7 +109,13 @@ EOF
     provisioner.add_host '127.0.0.1', ['pxaas']
   end
 
-  # Install cloud-init and collectd
+  # TODO
+  # Generate random passwords for MySQL root, dashboarduser, dashboard cookie, dashboard admin, vagrant user
+
+  # TODO
+  # Setup cloud-init and collectd
+  # dpkg-reconfigure cloud-init
+  # vim /etc/cloud/cloud.cfg
   config.vm.provision "shell", inline: "apt-get install -y collectd cloud-init"
 
   # Install LAMP components
@@ -241,5 +247,10 @@ EOF
     cd /home/proxyvnf/dashboard
     sudo -u proxyvnf git pull
   SHELL
+
+  # ALWAYS RUN ON HOST
+  # TODO
+  # Reset the virtual machine details
+  # virt-sysprep -d pxaas
 
 end
