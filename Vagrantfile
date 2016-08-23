@@ -248,9 +248,4 @@ EOF
     sudo -u proxyvnf git pull
   SHELL
 
-  # ALWAYS RUN ON HOST
-  # TODO
-  # Reset the virtual machine details
-  # virt-sysprep -d pxaas
-
 end
