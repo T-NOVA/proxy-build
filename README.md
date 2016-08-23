@@ -2,7 +2,7 @@
 
 Vagrant configuration file for PXaaS vNF provisioning in the framework of the [T-NOVA](http://t-nova.eu/) project.
 
-A Debian Jessie box is built, which contains [Squid](http://www.squid-cache.org/), [SquidGuard](http://www.squidguard.org/) and a [dashboard](https://github.com/T-NOVA/Squid-dashboard) to control rules, blacklists and ACLs.
+A box based on **Alpine Linux** is built, which contains [Squid](http://www.squid-cache.org/), [SquidGuard](http://www.squidguard.org/) and a [dashboard](https://github.com/T-NOVA/Squid-dashboard) to control rules, blacklists and ACLs.
 
 The PXaaS vNF enables the provider to deploy a web proxy/filtering/anonymity service on demand onto a cloud platform.
 
