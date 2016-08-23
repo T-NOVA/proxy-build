@@ -79,6 +79,15 @@ To test that site blocking is enabled do:
 ```
 
 
+## Prepare VM for OpenStack deployment
+
+Reset the virtual machine details to prepare for OpenStack deployment:
+
+```sh
+    virt-sysprep -d pxaas
+```
+
+
 ## Reload the VM configuration
 
 The VM is configured to pull new commits into the dashboard directory on reload. Execute:
