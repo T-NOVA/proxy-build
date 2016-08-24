@@ -21,19 +21,6 @@ Vagrant.configure(2) do |config|
     v.cpus = 1
   end
 
-  # KVM
-  # config.vm.provider "libvirt" do |v|
-    # v.host = "localhost"
-    # v.username = ""
-    # v.password = ""
-    # v.connect_via_ssh =
-    # v.memory = 512
-    # v.cpus = 1
-    # v.nested = "false"
-    # v.graphics_type = "spice"
-    # v.channel :type => "spicevmc", :target_name => "com.redhat.spice.0", :target_type => "virtio"
-  # end
-
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
   # `vagrant box outdated`. This is not recommended.
@@ -62,29 +49,41 @@ Vagrant.configure(2) do |config|
   # Disable the default sharing
   config.vm.synced_folder ".", "/vagrant", disabled: true
 
-  # Define a Vagrant Push strategy for pushing to Atlas. Other push strategies
-  # such as FTP and Heroku are also available. See the documentation at
-  # https://docs.vagrantup.com/v2/push/atlas.html for more information.
-  # config.push.define "atlas" do |push|
-  #   push.app = "YOUR_ATLAS_USERNAME/YOUR_APPLICATION_NAME"
-  # end
+  config.vm.provision "shell", inline: <<-SHELL
+    apk upgrade -U --available
+    # sync
+    # reboot
+    # setup-apkrepos
+    sed -i -e 's/v3\.4/edge/g' /etc/apk/repositories
+    sed -e 's/main/community/' /etc/apk/repositories | head -n 1 | tee -a /etc/apk/repositories
+    sed -e 's/main/testing/' /etc/apk/repositories | head -n 1 | tee -a /etc/apk/repositories
+    apk upgrade -U --available
+    cat /etc/alpine-release
+  SHELL
 
-  # Enable provisioning with a shell script. Additional provisioners such as
-  # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
-  # documentation for more information about their specific syntax and use.
+  # TODO
+  # Upgrade to the edge release to enable the testing repo (for squidguard):
+  # https://wiki.alpinelinux.org/wiki/Upgrading_Alpine
+  # Use a mirror from http://dl-cdn.alpinelinux.org/alpine/MIRRORS.txt
+
+  # TODO
+  # Upgrade all: apk update --update-cache --available
+  # Install squid squidguard haproxy mariadb
+
+  # TODO
+  # Test squidanalyzer
+
+  # TODO
+  # Test acf-squid
+
+  # TODO
+  # Test https://wiki.alpinelinux.org/wiki/CGP
 
   # Fix the no tty error (see https://github.com/Varying-Vagrant-Vagrants/VVV/issues/517)
 #    config.vm.provision "fix-no-tty", type: "shell" do |s|
 #      s.privileged = false
 #      s.inline = "sudo sed -i '/tty/!s/mesg n/tty -s \\&\\& mesg n/' /root/.profile"
 #    end
-#
-#   # Update apt repos
-#   config.vm.provision "shell", inline: "apt-get update"
-#   # puppet
-#   config.vm.provision "shell", inline: "apt-get install -y puppet"
-#   # ansible does not need a client, but needs python-apt to install packages
-#   config.vm.provision "shell", inline: "apt-get install -y python-apt"
 #
 #   # Generate locales
 #   config.vm.provision "shell", inline: <<-SHELL

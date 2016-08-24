@@ -2,7 +2,7 @@
 
 Vagrant configuration file for PXaaS vNF provisioning in the framework of the [T-NOVA](http://t-nova.eu/) project.
 
-A box based on **Alpine Linux** is built, which contains [Squid](http://www.squid-cache.org/), [SquidGuard](http://www.squidguard.org/) and a [dashboard](https://github.com/T-NOVA/Squid-dashboard) to control rules, blacklists and ACLs.
+A box based on the minimal **Alpine Linux** distribution is built, containing [Squid](http://www.squid-cache.org/), [SquidGuard](http://www.squidguard.org/) and a [dashboard](https://github.com/T-NOVA/Squid-dashboard) to control rules, blacklists and ACLs.
 
 The PXaaS vNF enables the provider to deploy a web proxy/filtering/anonymity service on demand onto a cloud platform.
 
@@ -13,7 +13,8 @@ Squid typically uses only a single processor, even on a multi-processor machine.
 
 * KVM/VirtualBox
 * [Vagrant](http://vagrantup.com)
-* [vagrant-vbguest](https://github.com/dotless-de/vagrant-vbguest) plugin if provisioned with VirtualBox or [vagrant-libvirt](https://github.com/vagrant-libvirt/vagrant-libvirt) plugin if provisioned with libvirt
+* [vagrant-libvirt](https://github.com/vagrant-libvirt/vagrant-libvirt) plugin if provisioned with libvirt
+* [vagrant-alpine](https://github.com/maier/vagrant-alpine) plugin for configuring the Alpine Linux guest
 * [vagrant-hosts](https://github.com/oscar-stack/vagrant-hosts) plugin for managing local DNS resolution
 
 
@@ -27,27 +28,11 @@ The VM is built using the [official OpenStack guide](http://docs.openstack.org/i
     git clone https://github.com/T-NOVA/proxy-build && cd proxy-build
 ```
 
-**Step 2.** Download the vagrant box
-
-Debian (login `debian`):
-
-```sh
-    vagrant box add debian-openstack http://cdimage.debian.org/cdimage/openstack/current/debian-8.5.0-openstack-amd64.qcow2
-```
-
-Alpine :
+**Step 2.** Download the vagrant box:
 
 ```sh
     vagrant box add maier/alpine-3.4-x86_64
 ```
-
-Ubuntu (login `ubuntu`):
-
-```sh
-    vagrant box add xenial-daily https://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-vagrant.box
-```
-
-or `https://cloud-images.ubuntu.com/daily/server/xenial/current/xenial-server-cloudimg-amd64-disk1.img`
 
 **Step 3.** Provision the VM:
 
@@ -99,7 +84,7 @@ The VM is configured to pull new commits into the dashboard directory on reload.
 
 ## Local VM development
 
-To work on the local VM, first provision it and then use a sandbox environment to test, commit or rollback additional configuration.
+To work on the local VM, first provision it and then use a sandbox environment to test, commit or rollback your configuration changes.
 
 **Step 1.** Install the sahara and fog plugins
 
