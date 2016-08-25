@@ -11,11 +11,10 @@ Squid typically uses only a single processor, even on a multi-processor machine.
 
 ## Host machine requirements
 
-* KVM/VirtualBox
+* VirtualBox
 * [Vagrant](http://vagrantup.com)
-* [vagrant-libvirt](https://github.com/vagrant-libvirt/vagrant-libvirt) plugin if provisioned with libvirt
 * [vagrant-alpine](https://github.com/maier/vagrant-alpine) plugin for configuring the Alpine Linux guest
-* [vagrant-hosts](https://github.com/oscar-stack/vagrant-hosts) plugin for managing local DNS resolution
+* [vagrant-reload](https://github.com/aidanns/vagrant-reload) plugin to add reloading as a provisioning step
 
 
 ## Provision the VM
@@ -37,7 +36,7 @@ The VM is built using the [official OpenStack guide](http://docs.openstack.org/i
 **Step 3.** Provision the VM:
 
 ```sh
-    vagrant up --provider libvirt
+    vagrant up
 ```
 
 Once provisioning is done, the VM should be up and running with [Squid](http://www.squid-cache.org/), [SquidGuard](http://www.squidguard.org/), preconfigured [blacklists](http://dsi.ut-capitole.fr/blacklists/index_en.php) and [dashboard](https://github.com/T-NOVA/Squid-dashboard).
