@@ -50,6 +50,8 @@ Once provisioning is done, the VM should be up and running with [Squid](http://w
 
 or, distribute the generated ssh key.
 
+All other passwords are randomly generated and stored in `/home/vagrant`.
+
 **Step 5.** On your dev machine, access the dashboard at http://pxaas. To test the Squid proxy do:
 
 ```sh
@@ -61,6 +63,9 @@ To test that site blocking is enabled do:
 ```sh
     curl -x pxaas:8000 http://facebook.com
 ```
+
+You can also access the Alpine Configuration Framework (ACF) at https://pxaas.
+Login with root.
 
 
 ## Prepare VM for OpenStack deployment

@@ -49,200 +49,274 @@ Vagrant.configure(2) do |config|
   # Disable the default sharing
   config.vm.synced_folder ".", "/vagrant", disabled: true
 
+  # Configure local DNS resolution
+  config.vm.provision "shell", inline: "echo '127.0.0.1 localhost pxaas' | tee /etc/hosts"
+  config.vm.provision "shell", inline: "echo 'pxaas' | tee /etc/hostname"
+
+  # Upgrade to edge to enable the testing repo (for squidguard)
+  # https://wiki.alpinelinux.org/wiki/Upgrading_Alpine
   config.vm.provision "shell", inline: <<-SHELL
-    apk upgrade -U --available
-    # sync
-    # reboot
-    # setup-apkrepos
     sed -i -e 's/v3\.4/edge/g' /etc/apk/repositories
     sed -e 's/main/community/' /etc/apk/repositories | head -n 1 | tee -a /etc/apk/repositories
     sed -e 's/main/testing/' /etc/apk/repositories | head -n 1 | tee -a /etc/apk/repositories
-    apk upgrade -U --available
-    cat /etc/alpine-release
+    sync
   SHELL
 
-  # TODO
-  # Upgrade to the edge release to enable the testing repo (for squidguard):
-  # https://wiki.alpinelinux.org/wiki/Upgrading_Alpine
-  # Use a mirror from http://dl-cdn.alpinelinux.org/alpine/MIRRORS.txt
+  config.vm.provision "shell", inline: <<-SHELL
+    apk upgrade -U --available
+    cat /etc/*release*
+    sync
+  SHELL
+
+  # Install random password generation
+  config.vm.provision "shell", inline: "apk add pwgen"
+
+  # Install and enable cloud-init
+  config.vm.provision "shell", inline: <<-SHELL
+    apk add cloud-init
+    rc-update add cloud-init
+    rc-update add cloud-config
+    rc-update add cloud-final
+  SHELL
+
+  # Install and enable squid squidguard mariadb
+  config.vm.provision "shell", inline: <<-SHELL
+    apk add squid squidguard mariadb mariadb-client
+    rc-update add mariadb
+    rc-update add squid
+  SHELL
+
+  # Install and enable collectd and plugins
+  config.vm.provision "shell", inline: <<-SHELL
+    apk add collectd collectd-curl collectd-python collectd-write_http collectd-network collectd-mysql
+    # apk add collectd-apache
+    # apk add collectd-nginx
+    # apk add collectd-rrdtool
+    rc-update add collectd
+  SHELL
+
+  # Install and enable a web server with PHP
+  config.vm.provision "shell", inline: <<-SHELL
+    apk add php5 php5-cli php5-mysqli php5-imagick php5-zlib php5-fpm php5-mcrypt php5-gd php5-phar php5-curl php5-apache2 php5-intl php5-json php5-openssl php5-pdo_mysql php5-ctype
+    rc-update add apache2
+  SHELL
+
+  # Install various tools
+  config.vm.provision "shell", inline: "apk add git rsync py-pip"
 
   # TODO
-  # Upgrade all: apk update --update-cache --available
-  # Install squid squidguard haproxy mariadb
+  # Install and config the Alpine Configuration Framework (ACF)
+  config.vm.provision "shell", inline: <<-SHELL
+    apk add acf-squid
+    setup-acf
+    rc-update add mini_httpd
+  SHELL
+
+  # Configure MariaDB and add a random pwd for root
+  config.vm.provision "shell", inline: <<-SHELL
+    if [ ! -d "/run/mysqld" ]; then
+      mkdir -p /run/mysqld
+    fi
+    chown -R mysql:mysql /run/mysqld
+
+    if [ -d /var/lib/mysql/mysql ]; then
+      echo "[i] MySQL directory already present, skipping creation"
+      chown -R mysql:mysql /var/lib/mysql
+    else
+      echo "[i] MySQL data directory not found, creating initial DBs"
+
+      chown -R mysql:mysql /var/lib/mysql
+
+      mysql_install_db --user=mysql > /dev/null
+
+      if [ "$MYSQL_ROOT_PASSWORD" = "" ]; then
+        MYSQL_ROOT_PASSWORD=`pwgen 16 1`
+        echo "[i] MySQL root Password: $MYSQL_ROOT_PASSWORD"
+        echo $MYSQL_ROOT_PASSWORD > mysql_root_pass
+      fi
+
+      /usr/bin/mysqld --user=mysql --bootstrap --verbose=0 << EOF
+USE mysql;
+FLUSH PRIVILEGES;
+CREATE USER 'root'@'%';
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;
+UPDATE user SET password=PASSWORD("$MYSQL_ROOT_PASSWORD") WHERE user='root';
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'127.0.0.1' WITH GRANT OPTION;
+UPDATE user SET password=PASSWORD("") WHERE user='root' AND host='127.0.0.1';
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' WITH GRANT OPTION;
+UPDATE user SET password=PASSWORD("") WHERE user='root' AND host='localhost';
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'pxaas' WITH GRANT OPTION;
+UPDATE user SET password=PASSWORD("") WHERE user='root' AND host='pxaas';
+FLUSH PRIVILEGES;
+EOF
+    fi
+  SHELL
+
+  # Create a new DB and user
+  config.vm.provision "shell", inline: <<-SHELL
+    rc-service mariadb start
+    DASHBOARDUSER_PASS=`pwgen 16 1`
+    echo $DASHBOARDUSER_PASS > dashboarduser_pass
+    mysql -u root -h localhost << EOF
+FLUSH PRIVILEGES;
+USE mysql;
+CREATE USER 'dashboarduser'@'localhost';
+UPDATE user SET password=PASSWORD("$DASHBOARDUSER_PASS") WHERE user='dashboarduser';
+CREATE DATABASE dashboarddb;
+GRANT ALL PRIVILEGES ON dashboarddb.* TO dashboarduser@localhost;
+FLUSH PRIVILEGES;
+EOF
+  SHELL
+
+  # Copy squid and squidguard config to the box
+  config.vm.provision "file", source: "./conf/squid.conf", destination: "squid.conf"
+  config.vm.provision "file", source: "./conf/squidGuard.conf", destination: "squidGuard.conf"
+  config.vm.provision "shell", inline: <<-SHELL
+    DASHBOARDUSER_PASS=`cat dashboarduser_pass`
+    sed -i "s/password 12345678/password $DASHBOARDUSER_PASS/g" squid.conf
+    sed -i "s/mysqlpassword 12345678/mysqlpassword $DASHBOARDUSER_PASS/g" squidGuard.conf
+    cp /etc/squid/squid.conf /etc/squid/squid.conf-dist
+    cp /etc/squidGuard/squidGuard.conf /etc/squidGuard/squidGuard.conf-dist
+    cp squid.conf /etc/squid/
+    cp squidGuard.conf /etc/squidGuard/
+  SHELL
+
+  # TODO Run squidguard on the blacklists dir
+  # Download the black/whitelists
+  # See http://dsi.ut-capitole.fr/documentations/cache/squidguard_en.html
+  # and http://dsi.ut-capitole.fr/blacklists/index_en.php
+  config.vm.provision "shell", inline: <<-SHELL
+    cd /etc/squidGuard
+    mkdir /etc/squidGuard/blacklists && cd /etc/squidGuard/blacklists
+    rsync -arpogvt rsync://ftp.ut-capitole.fr/blacklist/dest/ .
+    wget -c http://www.squidblacklist.org/downloads/whitelist.txt
+    chown -R squid:squid /etc/squidGuard/blacklists
+    squidGuard -C all -b -d
+    chown -R squid:squid /etc/squidGuard/blacklists
+  SHELL
+
+  # Clone the dashboard
+  config.vm.provision "shell", privileged: "false", inline: <<-SHELL
+    git clone https://github.com/T-NOVA/Squid-dashboard dashboard
+    cd dashboard
+    git checkout devel
+    cd ..
+    sudo chown -R vagrant:vagrant dashboard
+  SHELL
+
+  # Configure the dashboard
+  config.vm.provision "shell", privileged: "false", inline: <<-SHELL
+    DASHBOARDUSER_PASS=`cat dashboarduser_pass`
+    sed -i "s/12345678/$DASHBOARDUSER_PASS/g" dashboard/config/db.php
+    sudo chown -R vagrant:vagrant dashboard
+  SHELL
+
+  # Install Composer and plugins
+  config.vm.provision "shell", inline: <<-SHELL
+    cd /tmp
+    curl -s http://getcomposer.org/installer | php
+    mv composer.phar /usr/local/bin/composer
+  SHELL
+  config.vm.provision "shell", privileged: "false", inline: <<-SHELL
+    composer global require "fxp/composer-asset-plugin:~1.2.1"
+    cd dashboard
+    composer install
+    cd ..
+    sudo chown -R vagrant:vagrant dashboard
+  SHELL
+
+  # Migrate DB to MySQL
+  # Create user admin:administrator
+  # Populate the DB with the blacklisted domains (this step may take a long time)
+  config.vm.provision "shell", privileged: "false", inline: <<-SHELL
+    cd dashboard
+    php yii migrate/up --interactive=0 --migrationPath=@vendor/dektrium/yii2-user/migrations
+    php yii createusers/create
+    php yii migrate --interactive=0
+  SHELL
+
+  # Deploy the dashboard
+  config.vm.provision "shell", inline: <<-SHELL
+    ln -s /home/vagrant/dashboard /var/www/localhost/htdocs/
+    chown -R apache:apache /var/www/localhost/htdocs/dashboard/web/assets
+    chown -R apache:apache /var/www/localhost/htdocs/dashboard/runtime
+  SHELL
+
+  # Secure the apache httpd
+  config.vm.provision "shell", inline: <<-SHELL
+    sed -i 's/ServerTokens OS/ServerTokens Prod/g' /etc/apache2/httpd.conf
+    sed -i 's/ServerAdmin you@example.com/ServerAdmin admin@t-nova.eu/g' /etc/apache2/httpd.conf
+  SHELL
+
+  # Apache rewrite module required for the dashboard
+  config.vm.provision "shell", inline: <<-'SHELL'
+    sed -i 's/#LoadModule rewrite_module modules\/mod_rewrite\.so/LoadModule rewrite_module modules\/mod_rewrite\.so/g' /etc/apache2/httpd.conf
+  SHELL
+
+  # Configure the httpd web root
+  config.vm.provision "file", source: "./conf/dashboard-dir.conf", destination: "dashboard-dir.conf"
+  config.vm.provision "shell", inline: <<-'SHELL'
+    cp dashboard-dir.conf /etc/apache2/conf.d/
+    sed -i 's/DocumentRoot[[:space:]]\+\"\/var\/www\/localhost\/htdocs\"$/DocumentRoot \"\/var\/www\/localhost\/htdocs\/dashboard\/web\"/g' /etc/apache2/httpd.conf
+  SHELL
+
+  # Enable service control for the dashboard
+  config.vm.provision "shell", inline: <<-SHELL
+    echo "apache ALL=(ALL) NOPASSWD:ALL" | tee /etc/sudoers.d/apache
+    chmod 440 /etc/sudoers.d/apache
+  SHELL
+
+
+  # TODO
+  # Scaling with haproxy
 
   # TODO
   # Test squidanalyzer
 
   # TODO
-  # Test acf-squid
-
-  # TODO
   # Test https://wiki.alpinelinux.org/wiki/CGP
 
-  # Fix the no tty error (see https://github.com/Varying-Vagrant-Vagrants/VVV/issues/517)
-#    config.vm.provision "fix-no-tty", type: "shell" do |s|
-#      s.privileged = false
-#      s.inline = "sudo sed -i '/tty/!s/mesg n/tty -s \\&\\& mesg n/' /root/.profile"
-#    end
-#
-#   # Generate locales
-#   config.vm.provision "shell", inline: <<-SHELL
-#     cat <<EOF > /etc/locale.gen
-# el_GR.UTF-8 UTF-8
-# en_GB.UTF-8 UTF-8
-# en_US.UTF-8 UTF-8
-# EOF
-#   SHELL
-#   config.vm.provision "shell", inline: "locale-gen"
-#
-#   # Create and configure the user who runs the dashboard
-#   config.vm.provision "shell", inline: <<-SHELL
-#     useradd -m -U -G sudo proxyvnf
-#     sudo -u proxyvnf ssh-keygen -t rsa -q -N "" -f /home/proxyvnf/.ssh/id_rsa
-#   SHELL
-#
-#   # Add entries to the hosts file
-#   # Run `vagrant hosts list` to list private_network hosts info
-#   config.vm.provision :hosts do |provisioner|
-#     provisioner.add_host '10.30.0.11', ['dns.medianetlab.gr', 'dns']
-#     provisioner.add_host '127.0.0.1', ['pxaas']
-#   end
-#
-#   # TODO
-#   # Generate random passwords for MySQL root, dashboarduser, dashboard cookie, dashboard admin, vagrant user
-#
-#   # TODO
-#   # Setup cloud-init and collectd
-#   config.vm.provision "shell", inline: "apt-get install -y collectd cloud-init"
-#
-#   # Install LAMP components
-#   config.vm.provision "shell", inline: <<-SHELL
-#     # export DEBIAN_FRONTEND=noninteractive
-#     debconf-set-selections <<< "maria-db-10.0 mysql-server/root_password password 12345678"
-#     debconf-set-selections <<< "maria-db-10.0 mysql-server/root_password_again password 12345678"
-#     apt-get install -y apache2 mariadb-server php5 php5-curl php5-intl php5-mcrypt php5-mysql php5-imagick
-#     systemctl enable mysql.service
-#     systemctl restart mysql.service
-#     systemctl enable apache2.service
-#     systemctl restart apache2.service
-#   SHELL
-#
-#   # Install squid and squidguard
-#   config.vm.provision "shell", inline: <<-SHELL
-#     apt-get install -y squidguard
-#     systemctl enable squid3.service
-#   SHELL
-#
-#   # Install other software components
-#   config.vm.provision "shell", inline: <<-SHELL
-#     apt-get install -y git vim curl python-pip
-#   SHELL
-#
-#   # Create a new DB and user
-#   config.vm.provision "shell", inline: <<-SHELL
-#     echo "CREATE DATABASE dashboarddb;
-#     CREATE USER 'dashboarduser'@'localhost' IDENTIFIED BY '12345678';
-#     GRANT ALL PRIVILEGES ON dashboarddb.* TO dashboarduser@localhost;" | mysql -u root -p12345678
-#   SHELL
-#
-#   # Copy squid and squidguard config to the box
-#   config.vm.provision "file", source: "./conf/squid.conf", destination: "squid.conf"
-#   config.vm.provision "file", source: "./conf/squidGuard.conf", destination: "squidGuard.conf"
-#   config.vm.provision "shell", inline: <<-SHELL
-#     cp /home/vagrant/squid.conf /etc/squid3
-#     cp /home/vagrant/squidGuard.conf /etc/squidguard
-#     chown -R proxy:proxy /etc/squid*
-#   SHELL
-#
-#   # Download the black/whitelists
-#   # See http://dsi.ut-capitole.fr/documentations/cache/squidguard_en.html
-#   # and http://dsi.ut-capitole.fr/blacklists/index_en.php
-#   config.vm.provision "shell", inline: <<-SHELL
-#     cd /home/proxyvnf
-#     sudo -u proxyvnf mkdir blacklists && cd blacklists
-#     sudo -u proxyvnf rsync -arpogvt rsync://ftp.ut-capitole.fr/blacklist .
-#     sudo -u proxy mkdir /etc/squidguard/blacklists
-#     sudo -u proxy cp -r dest/* /etc/squidguard/blacklists
-#     sudo -u proxyvnf wget -c http://www.squidblacklist.org/downloads/whitelist.txt
-#   SHELL
-#
-#   # Clone the dashboard
-#   config.vm.provision "shell", inline: <<-SHELL
-#     sudo -u proxyvnf git clone https://github.com/T-NOVA/Squid-dashboard /home/proxyvnf/dashboard
-#   SHELL
-#
-#   # Configure the dashboard
-#   config.vm.provision "shell", inline: <<-SHELL
-#     sed -e 's/primetel/12345678/g' /home/proxyvnf/dashboard/config/db.php > /home/proxyvnf/dashboard/config/db1.php
-#     mv /home/proxyvnf/dashboard/config/db1.php /home/proxyvnf/dashboard/config/db.php
-#     chown proxyvnf:proxyvnf /home/proxyvnf/dashboard/config/db.php
-#   SHELL
-#
-#   # Install Composer and plugins
-#   config.vm.provision "shell", inline: <<-SHELL
-#     cd /tmp
-#     curl -s http://getcomposer.org/installer | php
-#     mv composer.phar /usr/local/bin/composer
-#     sudo -u proxyvnf composer global require "fxp/composer-asset-plugin:~1.1.1"
-#     cd /home/proxyvnf/dashboard
-#     sudo -u proxyvnf composer install
-#   SHELL
-#
-#   # Migrate DB to MySQL
-#   # Create user admin:administrator
-#   # Populate the DB with the blacklisted domains (this step may take a long time)
-#   config.vm.provision "shell", inline: <<-SHELL
-#     cd /home/proxyvnf/dashboard
-#     sudo -u proxyvnf php yii migrate/up --interactive=0 --migrationPath=@vendor/dektrium/yii2-user/migrations
-#     sudo -u proxyvnf php yii createusers/create
-#     sudo -u proxyvnf php yii migrate --interactive=0
-#   SHELL
-#
-#   # Deploy the dashboard
-#   config.vm.provision "shell", inline: <<-SHELL
-#     ln -s /home/proxyvnf/dashboard /var/www/html/
-#     chown -R www-data:www-data /var/www/html/dashboard/web/assets
-#     chown -R www-data:www-data /var/www/html/dashboard/runtime
-#   SHELL
-#
-#   # Apache rewrite module required for the dashboard
-#   config.vm.provision "shell", inline: <<-SHELL
-#     /usr/sbin/a2enmod rewrite
-#     systemctl restart apache2.service
-#   SHELL
-#
-#   # Configure the apache web root
-#   config.vm.provision "file", source: "./conf/dashboard-dir.conf", destination: "dashboard-dir.conf"
-#   config.vm.provision "shell", inline: <<-'SHELL'
-#     mv /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-available/000-default.conf.dist
-#     cp /home/vagrant/dashboard-dir.conf /etc/apache2/conf-available/
-#     chown root:root /etc/apache2/conf-available/dashboard-dir.conf
-#     ln -sf /etc/apache2/conf-available/dashboard-dir.conf /etc/apache2/conf-enabled/dashboard-dir.conf
-#     ln -sf /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-enabled/000-default.conf
-#     sed -e 's/DocumentRoot[[:space:]]\+\/var\/www\/html$/DocumentRoot \/var\/www\/html\/dashboard\/web/g' /etc/apache2/sites-available/000-default.conf.dist > /etc/apache2/sites-available/000-default.conf
-#     systemctl restart apache2.service
-#   SHELL
-#
-#   # Enable service control from the dashboard
-#   config.vm.provision "shell", inline: <<-SHELL
-#     echo "www-data ALL=(ALL) NOPASSWD:ALL" | tee /etc/sudoers.d/www-data
-#     chmod 440 /etc/sudoers.d/www-data
-#   SHELL
-#
-#   # ALWAYS RUN
-#   # Fix permissions on conf files
-#   config.vm.provision "shell", run: "always", inline: <<-SHELL
-#     chgrp www-data /etc/squid3/squid.conf
-#     chgrp www-data /etc/squidguard/squidGuard.conf
-#     chmod g+rw /etc/squid3/squid.conf
-#     chmod g+rw /etc/squidguard/squidGuard.conf
-#   SHELL
-#
-#   # ALWAYS RUN
-#   # Reload the dashboard
-#   config.vm.provision "shell", run: "always", inline: <<-SHELL
-#     cd /home/proxyvnf/dashboard
-#     sudo -u proxyvnf git pull
-#   SHELL
+
+  # ALWAYS RUN
+  # Fix permissions of conf files
+  config.vm.provision "shell", run: "always", inline: <<-SHELL
+    chown apache:apache /etc/squid/squid.conf
+    chown apache:apache /etc/squidGuard/squidGuard.conf
+  SHELL
+
+  # ALWAYS RUN
+  # Pull new code into the dashboard
+  config.vm.provision "shell", privileged: "false", run: "always", inline: <<-SHELL
+    cd dashboard
+    git pull
+    cd ..
+    chown -R vagrant:vagrant dashboard
+    chown -R apache:apache /var/www/localhost/htdocs/dashboard/web/assets
+    chown -R apache:apache /var/www/localhost/htdocs/dashboard/runtime
+  SHELL
+
+  # ALWAYS RUN
+  # Clear /etc/network/interfaces and reload
+  config.vm.provision "shell", run: "always", inline: <<-SHELL
+    cat << EOF > /etc/network/interfaces
+auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet dhcp
+    hostname pxaas
+
+EOF
+  SHELL
+
+  # ALWAYS RUN
+  # Clean the apk cache and reload
+  config.vm.provision "shell", run: "always", inline: "rm -rf /var/cache/apk/*"
+  config.vm.provision :reload
+
+  # ALWAYS RUN
+  # Check runtime services are up
+  config.vm.provision "shell", run: "always", inline: "rc-status -a"
 
 end
+
