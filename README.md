@@ -2,7 +2,7 @@
 
 Vagrant configuration file for PXaaS vNF provisioning in the framework of the [T-NOVA](http://t-nova.eu/) project.
 
-A Debian Jessie box is built, which contains [Squid](http://www.squid-cache.org/), [SquidGuard](http://www.squidguard.org/) and a [dashboard](https://github.com/T-NOVA/Squid-dashboard) to control rules, blacklists and ACLs.
+The vNF is built on the [Ubuntu Xenial daily build for OpenStack](https://cloud-images.ubuntu.com/xenial/current/), containing [Squid](http://www.squid-cache.org/), [SquidGuard](http://www.squidguard.org/) and a [dashboard](https://github.com/T-NOVA/Squid-dashboard) to control rules, blacklists and ACLs.
 
 The PXaaS vNF enables the provider to deploy a web proxy/filtering/anonymity service on demand onto a cloud platform.
 
@@ -11,9 +11,8 @@ Squid typically uses only a single processor, even on a multi-processor machine.
 
 ## Host machine requirements
 
-* KVM/VirtualBox
+* VirtualBox
 * [Vagrant](http://vagrantup.com)
-* [vagrant-vbguest](https://github.com/dotless-de/vagrant-vbguest) plugin if provisioned with VirtualBox or [vagrant-libvirt](https://github.com/vagrant-libvirt/vagrant-libvirt) plugin if provisioned with libvirt
 * [vagrant-hosts](https://github.com/oscar-stack/vagrant-hosts) plugin for managing local DNS resolution
 
 
@@ -27,37 +26,15 @@ The VM is built using the [official OpenStack guide](http://docs.openstack.org/i
     git clone https://github.com/T-NOVA/proxy-build && cd proxy-build
 ```
 
-**Step 2.** Download the vagrant box
-
-Debian (login `debian`):
+**Step 2.** Provision the VM:
 
 ```sh
-    vagrant box add debian-openstack http://cdimage.debian.org/cdimage/openstack/current/debian-8.5.0-openstack-amd64.qcow2
-```
-
-Alpine :
-
-```sh
-    vagrant box add maier/alpine-3.4-x86_64
-```
-
-Ubuntu (login `ubuntu`):
-
-```sh
-    vagrant box add xenial-daily https://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-vagrant.box
-```
-
-or `https://cloud-images.ubuntu.com/daily/server/xenial/current/xenial-server-cloudimg-amd64-disk1.img`
-
-**Step 3.** Provision the VM:
-
-```sh
-    vagrant up --provider libvirt
+    vagrant up
 ```
 
 Once provisioning is done, the VM should be up and running with [Squid](http://www.squid-cache.org/), [SquidGuard](http://www.squidguard.org/), preconfigured [blacklists](http://dsi.ut-capitole.fr/blacklists/index_en.php) and [dashboard](https://github.com/T-NOVA/Squid-dashboard).
 
-**Step 4.** Change the `vagrant` user's password so users can log in:
+**Step 3.** Change the `vagrant` user's password so users can log in:
 
 ```sh
     vagrant ssh
@@ -66,25 +43,26 @@ Once provisioning is done, the VM should be up and running with [Squid](http://w
 
 or, distribute the generated ssh key.
 
-**Step 5.** On your dev machine, access the dashboard at http://pxaas. To test the Squid proxy do:
+All other passwords are randomly generated and stored in `/home/vagrant`.
+
+**Step 4.** On your dev machine, access the dashboard at http://pxaas. To test the Squid proxy do:
 
 ```sh
-    curl -x pxaas:8000 http://google.com
+    curl -x pxaas:3128 http://google.com
 ```
 
 To test that site blocking is enabled do:
 
 ```sh
-    curl -x pxaas:8000 http://facebook.com
+    curl -x pxaas:3128 http://facebook.com
 ```
 
-
-## Prepare VM for OpenStack deployment
-
-Reset the virtual machine details to prepare for OpenStack deployment:
+To test through telnet do:
 
 ```sh
-    virt-sysprep -d pxaas
+    telnet pxaas 3128
+    CONNECT google.com:80
+    CONNECT facebook.com:80
 ```
 
 
@@ -99,7 +77,7 @@ The VM is configured to pull new commits into the dashboard directory on reload.
 
 ## Local VM development
 
-To work on the local VM, first provision it and then use a sandbox environment to test, commit or rollback additional configuration.
+To work on the local VM, first provision it and then use a sandbox environment to test, commit or rollback your configuration changes.
 
 **Step 1.** Install the sahara and fog plugins
 
