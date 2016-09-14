@@ -178,7 +178,7 @@ EOF
   SHELL
 
   # Configure services
-  config.vm.provision "shell", run: "always", inline: <<-SHELL
+  config.vm.provision "shell", inline: <<-SHELL
     systemctl enable mysql.service
     systemctl restart mysql.service
 
@@ -202,18 +202,11 @@ EOF
     su vagrant -l -c "cd dashboard; git stash; git pull; git stash apply; git stash drop"
   SHELL
 
-  # Update all packages and purge unneeded
+  # Purge unneeded files
   config.vm.provision "shell", inline: <<-SHELL
     DEBIAN_FRONTEND=noninteractive apt-get remove -y --purge debconf-utils pwgen
-    DEBIAN_FRONTEND=noninteractive apt-get update
-    DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
     rm -rf /var/cache/apt
   SHELL
-
-  # FIXME
-  # Run to get a list of every possible question during installation
-  # sudo debconf-get-selections
-  # sudo debconf-get-selections --installer
 
 end
 
