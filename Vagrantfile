@@ -58,7 +58,7 @@ Vagrant.configure(2) do |config|
   # Install squid, squidclient and squidguard
   config.vm.provision "shell", inline: <<-SHELL
     debconf-set-selections <<< "squid squid/fix_cachedir_perms boolean true"
-    DEBIAN_FRONTEND=noninteractive apt-get install -y squid squidguard
+    DEBIAN_FRONTEND=noninteractive apt-get install -y squid squidclient squidguard
   SHELL
 
   # Install LAMP components
