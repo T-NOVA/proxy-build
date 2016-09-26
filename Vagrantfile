@@ -202,10 +202,12 @@ EOF
     su vagrant -l -c "cd dashboard; git stash; git pull; git stash apply; git stash drop"
   SHELL
 
-  # Purge unneeded files
+  # Purge unneeded files and zero-out free space
   config.vm.provision "shell", inline: <<-SHELL
     DEBIAN_FRONTEND=noninteractive apt-get remove -y --purge debconf-utils pwgen
     rm -rf /var/cache/apt
+    dd if=/dev/zero of=/tmp/zeros bs=1M
+    rm /tmp/zeros
   SHELL
 
 end
