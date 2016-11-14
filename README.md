@@ -110,3 +110,29 @@ OR **Step 3.** Rollback the changes
     vagrant sandbox off
 ```
 
+
+## Package the vPXaaS for distribution
+
+**Step 1.** Shutdown the Vagrant box
+
+```sh
+    vagrant halt
+```
+
+**(Optional) Step 2.** Stop sandbox mode
+
+```sh
+    vagrant sandbox commit # or rollback
+    vagrant sandbox off
+```
+
+**Step 3.** Convert image file to `qcow2` format
+
+Since the last step of the Vagrant provisioning script zeroes out the VM's disk, the image can be stored more efficiently. To convert to the `qcow2` format do:
+
+```sh
+    qemu-img convert vagrant_box.vmdk -O qcow2 vpxaas_`date -u -Iseconds | sed -e 's/-//g; s/://g; s/+0000/Z/'`.qcow2
+```
+
+Add the `-c` option to compress the image.
+
