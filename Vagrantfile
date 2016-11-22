@@ -34,7 +34,7 @@ Vagrant.configure(2) do |config|
 
   # Install system software
   config.vm.provision "shell", inline: <<-SHELL
-    DEBIAN_FRONTEND=noninteractive apt-get install -y git curl python-pip htop pwgen debconf-utils zerofree
+    DEBIAN_FRONTEND=noninteractive apt-get install -y git curl python-pip htop pwgen debconf-utils
   SHELL
 
   # Setup cloud-init and collectd
@@ -202,26 +202,12 @@ EOF
     su vagrant -l -c "cd dashboard; git stash; git pull; git stash apply; git stash drop"
   SHELL
 
-  # Stop all services so that the FS can be mounted read-only
-  config.vm.provision "shell", inline: <<-SHELL
-    systemctl stop cloud-init.service
-    systemctl stop cloud-final.service
-    systemctl stop cloud-config.service
-    systemctl stop squid.service
-    systemctl stop apache2.service
-    systemctl stop mysql.service
-    fuser -v -m / # services with open files
-  SHELL
-
   # Purge unneeded files and zero-out free space
   config.vm.provision "shell", inline: <<-SHELL
     DEBIAN_FRONTEND=noninteractive apt-get remove -y --purge debconf-utils pwgen
     rm -rf /var/cache/apt
-    # Use zerofree instead of dd
-    # dd if=/dev/zero of=/tmp/zeros bs=1M
-    # rm /tmp/zeros
-    mount -o remount,ro /
-    zerofree /
+    dd if=/dev/zero of=/tmp/zeros bs=1M
+    rm /tmp/zeros
   SHELL
 
 end
