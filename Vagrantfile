@@ -89,8 +89,8 @@ EOF
   SHELL
 
   # Copy squid and squidguard config to the box
-  config.vm.provision "file", source: "./conf/squid.conf", destination: "squid.conf"
-  config.vm.provision "file", source: "./conf/squidGuard.conf", destination: "squidGuard.conf"
+  config.vm.provision "file", source: "./conf/etc/squid/squid.conf", destination: "squid.conf"
+  config.vm.provision "file", source: "./conf/etc/squidGuard/squidGuard.conf", destination: "squidGuard.conf"
   config.vm.provision "shell", inline: <<-SHELL
     cp squid.conf /etc/squid
     cp squidGuard.conf /etc/squidguard
