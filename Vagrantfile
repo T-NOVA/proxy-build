@@ -37,12 +37,10 @@ Vagrant.configure(2) do |config|
     DEBIAN_FRONTEND=noninteractive apt-get install -y git curl python-pip htop pwgen debconf-utils
   SHELL
 
-  # Setup cloud-init and collectd
+  # Setup collectd and unattended upgrades
   config.vm.provision "shell", inline: <<-SHELL
-    DATASOURCE_LIST="ConfigDrive, Openstack, None"
-    debconf-set-selections <<< "cloud-init cloud-init/datasources multiselect ${DATASOURCE_LIST}"
     debconf-set-selections <<< "unattended-upgrades unattended-upgrades/enable_auto_updates boolean true"
-    DEBIAN_FRONTEND=noninteractive apt-get install -y collectd unattended-upgrades collectd-utils cloud-init cloud-initramfs-growroot
+    DEBIAN_FRONTEND=noninteractive apt-get install -y collectd unattended-upgrades collectd-utils
   SHELL
 
   # Generate random passwords for MySQL root, dashboarduser, dashboard cookie, dashboard admin, vagrant user
@@ -187,13 +185,6 @@ EOF
 
     systemctl enable squid.service
     systemctl restart squid.service
-
-    systemctl enable cloud-config.service
-    systemctl enable cloud-init.service
-    systemctl enable cloud-final.service
-    systemctl restart cloud-config.service
-    systemctl restart cloud-init.service
-    systemctl restart cloud-final.service
   SHELL
 
   # ALWAYS RUN
